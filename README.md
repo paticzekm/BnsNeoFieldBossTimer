@@ -25,8 +25,8 @@ Field Boss Timer is a web application designed to track the respawn times of bos
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/YourUsername/field-boss-timer.git
-   cd field-boss-timer
+   git clone https://github.com/paticzekm/BnsNeoFieldBossTimer
+   cd BnsNeoFieldBossTimer
    ```
 2. **Install dependencies:**
    ```bash
