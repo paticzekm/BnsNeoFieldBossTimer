@@ -4,6 +4,8 @@
 
 Field Boss Timer is a web application designed to track the respawn times of bosses in BnS Neo. It allows users to add timers, synchronize in real-time, and adjust notification sounds.
 
+![Alt text](https://img001.prntscr.com/file/img001/wejnOvVLSSC_yKZqhYuyBw.png)
+
 ## 🚀 Features
 
 - ✅ **Add timers** for different bosses and channels
