@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, HelpCircle } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
 const BOSS_TIMERS = {
   Jiangshi: { 'Boss Dead': 300, 'Variant Spawning': 120, 'Variant Dead': 480 },
-  Gigantura: { 'Boss Dead': 400, 'Variant Spawning': 150, 'Variant Dead': 600 },
-  WuFu: { 'Boss Dead': 500, 'Variant Spawning': 200, 'Variant Dead': 700 },
-  Pinchy: { 'Boss Dead': 500, 'Variant Spawning': 200, 'Variant Dead': 700 },
+  Gigantura: { 'Boss Dead': 300, 'Variant Spawning': 120, 'Variant Dead': 480 },
+  WuFu: { 'Boss Dead': 300, 'Variant Spawning': 120, 'Variant Dead': 480 },
+  Pinchy: { 'Boss Dead': 300, 'Variant Spawning': 120, 'Variant Dead': 480 },
   GoldenDeva: {
-    'Boss Dead': 500,
-    'Variant Spawning': 200,
-    'Variant Dead': 700,
+    'Boss Dead': 300,
+    'Variant Spawning': 120,
+    'Variant Dead': 480,
   },
-  Bulbari: { 'Boss Dead': 500, 'Variant Spawning': 200, 'Variant Dead': 700 },
+  Bulbari: { 'Boss Dead': 300, 'Variant Spawning': 120, 'Variant Dead': 480 },
 };
 
 const alertSound = new Audio('/alert.mp3');
@@ -32,6 +32,14 @@ export default function App() {
     () => JSON.parse(localStorage.getItem('audioEnabled')) || false
   );
   const [interactionOccurred, setInteractionOccurred] = useState(false);
+  const channelRef = useRef([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    channelRef.current = Array(5)
+      .fill()
+      .map((_, i) => channelRef.current[i] || React.createRef());
+  }, []);
 
   const toggleAudio = () => {
     setAudioEnabled((prev) => {
@@ -201,7 +209,33 @@ export default function App() {
     return () => clearInterval(interval);
   }, [timers, isPlaying, selectedBoss, audioEnabled]);
 
+  const handleStartTimer = (type, index) => {
+    const channelValue = channelRef.current[index].current?.value?.trim();
+    if (
+      !channelValue ||
+      isNaN(channelValue) ||
+      channelValue < 1 ||
+      channelValue > 50
+    ) {
+      console.error('Nieprawidłowy kanał');
+      return;
+    }
+    startTimer(channelValue, type);
+  };
+
   const startTimer = async (channel, type) => {
+    if (!channel || !type || isProcessing) return;
+
+    setIsProcessing(true);
+
+    const existingTimer = timers.find(
+      (t) => t.channel === channel && t.type === type
+    );
+    if (existingTimer) {
+      setIsProcessing(false);
+      return;
+    }
+
     const endTime = Date.now() + TIMER_VALUES[type] * 1000;
 
     await supabase
@@ -211,17 +245,16 @@ export default function App() {
         `end_time.lt.${Date.now()},and(boss.eq.${selectedBoss},channel.eq.${channel})`
       );
 
-    setTimers((prev) => {
-      const filteredTimers = prev.filter((t) => t.channel !== channel);
-      return [
-        ...filteredTimers,
-        { channel, type, endTime, timeLeft: TIMER_VALUES[type] },
-      ].sort((a, b) => a.endTime - b.endTime);
-    });
+    const { error } = await supabase.from('timers').insert([
+      {
+        boss: selectedBoss,
+        channel,
+        type,
+        end_time: endTime,
+      },
+    ]);
 
-    const { error } = await supabase
-      .from('timers')
-      .insert([{ boss: selectedBoss, channel, type, end_time: endTime }]);
+    setIsProcessing(false);
 
     if (error) {
       console.error('Błąd zapisu do Supabase:', error);
@@ -325,17 +358,20 @@ export default function App() {
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
-          {[...Array(10)].map((_, i) => (
-            <div
-              key={i}
-              className="p-4 bg-gray-800 rounded-lg flex flex-col items-center w-full"
-            >
-              <h3 className="text-lg font-semibold">{i + 1} channel</h3>
+          {[...Array(5)].map((_, i) => (
+            <div className="p-4 bg-gray-800 rounded-lg flex flex-col items-center text-nowrap ">
+              <input
+                type="text"
+                placeholder="Enter channel (1-50)"
+                ref={channelRef.current[i]}
+                className="p-2 text-black rounded w-full text-center mb-4"
+              />
+
               {Object.keys(TIMER_VALUES).map((type) => (
                 <button
                   key={type}
                   className="mt-2 w-full p-2 rounded bg-blue-600 hover:bg-blue-700"
-                  onClick={() => startTimer(i + 1, type)}
+                  onClick={() => handleStartTimer(type, i)}
                 >
                   {type}
                 </button>
