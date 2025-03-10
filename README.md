@@ -68,20 +68,7 @@ To use Supabase as the backend for real-time synchronization and database storag
    - Go to **Database** → **Tables** → Select `timers`
    - Enable **Realtime Subscription**
 
-4. **Set Row Level Security (RLS):**
-
-   - Go to **Authentication** → **Policies**
-   - Add a policy to allow users to read and insert records:
-
-   ```sql
-   create policy "Enable read access for all users" on timers
-   for select using (true);
-
-   create policy "Enable insert access for all users" on timers
-   for insert with check (true);
-   ```
-
-5. **Get API Keys:**
+4. **Get API Keys:**
    - Go to **Project Settings** → **API**
    - Copy the **Anon Key** and **Project URL**
    - Add them to your `src/supabaseClient.js` file
